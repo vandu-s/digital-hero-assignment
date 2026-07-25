@@ -22,7 +22,7 @@ services:
     name: lead-crm-api
     runtime: node
     plan: free
-    buildCommand: npm ci --include=dev && npm run prisma:generate --workspace=server && npm run build --workspace=server && npm run prisma:deploy --workspace=server
+    buildCommand: npm ci --include=dev && npm run prisma:generate --workspace=server && npm run build --workspace=server && npm run prisma:deploy --workspace=server && npm run prisma:seed --workspace=server
     startCommand: npm run start --workspace=server
     envVars:
       - key: NODE_ENV
