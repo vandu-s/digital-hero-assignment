@@ -22,7 +22,7 @@ services:
     name: lead-crm-api
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build --workspace=server && npm run prisma:generate --workspace=server && npm run prisma:deploy --workspace=server
+    buildCommand: npm ci --include=dev && npm run prisma:generate --workspace=server && npm run build --workspace=server && npm run prisma:deploy --workspace=server
     startCommand: npm run start --workspace=server
     envVars:
       - key: NODE_ENV
@@ -45,7 +45,7 @@ services:
   - type: web
     name: lead-crm-client
     runtime: static
-    buildCommand: npm install && npm run build --workspace=client
+    buildCommand: npm ci --include=dev && npm run build --workspace=client
     staticPublishPath: client/dist
     envVars:
       - key: VITE_API_BASE_URL
