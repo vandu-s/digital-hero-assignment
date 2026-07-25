@@ -1,0 +1,59 @@
+##
+# Render Blueprint - deploys the whole stack from one file:
+# https://render.com/docs/blueprint-spec
+#
+# Creates:
+#   1. A managed PostgreSQL database
+#   2. A Node web service running the Express API (runs Prisma migrate on deploy)
+#   3. A static site serving the built React app
+#
+# To deploy: push this repo to GitHub, then in the Render dashboard choose
+# "New +" -> "Blueprint" and point it at the repo. Render reads this file
+# and provisions all three resources together.
+##
+databases:
+  - name: lead-crm-db
+    plan: free
+    databaseName: lead_crm
+    user: lead_crm_user
+
+services:
+  - type: web
+    name: lead-crm-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install && npm run build && npx prisma migrate deploy
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lead-crm-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 1d
+      - key: BCRYPT_SALT_ROUNDS
+        value: 10
+      - key: CLIENT_ORIGIN
+        value: https://lead-crm-client.onrender.com
+
+  - type: web
+    name: lead-crm-client
+    runtime: static
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://lead-crm-api.onrender.com/api/v1
+    routes:
+      # SPA fallback - React Router handles the path client-side.
+      - type: rewrite
+        source: /*
+        destination: /index.html
