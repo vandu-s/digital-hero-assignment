@@ -27,18 +27,21 @@ import {
   TableBody,
   TableCell,
   TableHead,
+  TablePagination,
   TableRow,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import SearchIcon from "@mui/icons-material/Search";
+import { useCallback, useEffect, useState } from "react";
 import { useAppSelector } from "../../hooks/reduxHooks";
-import { createUser, deleteUser, listUsers, updateUser } from "../../services/userApi";
+import { createUser, deleteUser, listUsersPaged, updateUser } from "../../services/userApi";
 import { Role, User } from "../../types/models";
 import { formatDate } from "../../utils/formatDate";
 import { LoadingState } from "../../components/states/LoadingState";
 import { ErrorState } from "../../components/states/ErrorState";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { isNonEmpty, isValidEmail } from "../../utils/validation";
 
 interface CreateForm {
@@ -59,6 +62,15 @@ export function UsersPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
+  // Server-side pagination + filtering. `page` is 0-based here to match MUI's
+  // TablePagination; the API is 1-based, so it's offset by one when fetching.
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<Role | "">("");
+  const debouncedSearch = useDebouncedValue(search, 400);
+
   // Create-user dialog state
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
@@ -70,16 +82,35 @@ export function UsersPage() {
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  function reload() {
+  const reload = useCallback(() => {
     setLoading(true);
     setError(false);
-    listUsers()
-      .then(setUsers)
+    listUsersPaged({
+      page: page + 1,
+      limit: rowsPerPage,
+      search: debouncedSearch || undefined,
+      role: roleFilter || undefined,
+    })
+      .then((result) => {
+        setUsers(result.users);
+        setTotal(result.meta.total);
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }
+  }, [page, rowsPerPage, debouncedSearch, roleFilter]);
 
-  useEffect(reload, []);
+  useEffect(() => {
+    reload();
+  }, [reload]);
+
+  // Deleting the last row of the final page (or narrowing a filter) can leave
+  // us past the end of the result set, which would show an empty table. Step
+  // back a page when that happens.
+  useEffect(() => {
+    if (!loading && total > 0 && page > 0 && page * rowsPerPage >= total) {
+      setPage(Math.max(0, Math.ceil(total / rowsPerPage) - 1));
+    }
+  }, [loading, total, page, rowsPerPage]);
 
   async function handleRoleChange(userId: string, role: Role) {
     setSavingId(userId);
@@ -172,6 +203,41 @@ export function UsersPage() {
         </Button>
       </Stack>
 
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+        <TextField
+          placeholder="Search by name or email"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(0);
+          }}
+          size="small"
+          sx={{ maxWidth: { sm: 320 }, width: "100%" }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" color="action" />
+              </InputAdornment>
+            ),
+          }}
+        />
+        <TextField
+          select
+          label="Role"
+          value={roleFilter}
+          onChange={(e) => {
+            setRoleFilter(e.target.value as Role | "");
+            setPage(0);
+          }}
+          size="small"
+          sx={{ minWidth: 160 }}
+        >
+          <MenuItem value="">All roles</MenuItem>
+          <MenuItem value="ADMIN">Admin</MenuItem>
+          <MenuItem value="MEMBER">Member</MenuItem>
+        </TextField>
+      </Stack>
+
       {loading && <LoadingState />}
       {!loading && error && (
         <ErrorState message="We couldn't load the user list." onRetry={reload} />
@@ -251,12 +317,27 @@ export function UsersPage() {
               {!loading && users.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                    No users found.
+                    {debouncedSearch || roleFilter
+                      ? "No users match your filters."
+                      : "No users found."}
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
+          <TablePagination
+            component="div"
+            count={total}
+            page={page}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => {
+              setRowsPerPage(parseInt(e.target.value, 10));
+              setPage(0);
+            }}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            sx={{ borderTop: "1px solid", borderColor: "divider" }}
+          />
         </Box>
       )}
 

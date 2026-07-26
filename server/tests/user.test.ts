@@ -41,6 +41,90 @@ describe("GET /api/v1/users", () => {
 
     expect(res.status).toBe(401);
   });
+
+  // The lead-assignment dropdowns call this endpoint with no query params and
+  // need every user back, so an unpaginated call must stay unpaginated.
+  it("returns every user and no pagination meta when page/limit are omitted", async () => {
+    const res = await request(app).get("/api/v1/users").set(authHeader(admin.token));
+    const total = await prisma.user.count();
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(total);
+    expect(res.body.meta).toBeUndefined();
+  });
+
+  it("paginates and reports meta when page and limit are supplied", async () => {
+    const total = await prisma.user.count();
+    const res = await request(app).get("/api/v1/users?page=1&limit=2").set(authHeader(admin.token));
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBeLessThanOrEqual(2);
+    expect(res.body.meta).toEqual({
+      page: 1,
+      limit: 2,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / 2)),
+    });
+  });
+
+  it("returns different users on page 2 than page 1", async () => {
+    const [first, second] = await Promise.all([
+      request(app).get("/api/v1/users?page=1&limit=1").set(authHeader(admin.token)),
+      request(app).get("/api/v1/users?page=2&limit=1").set(authHeader(admin.token)),
+    ]);
+
+    expect(first.body.data[0].id).not.toBe(second.body.data[0].id);
+  });
+
+  it("filters by search term and narrows the reported total", async () => {
+    const res = await request(app)
+      .get("/api/v1/users?page=1&limit=10&search=jane")
+      .set(authHeader(admin.token));
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBeGreaterThan(0);
+    for (const user of res.body.data) {
+      expect(`${user.name} ${user.email}`.toLowerCase()).toContain("jane");
+    }
+    expect(res.body.meta.total).toBe(res.body.data.length);
+  });
+
+  it("filters by role", async () => {
+    const res = await request(app)
+      .get("/api/v1/users?page=1&limit=50&role=ADMIN")
+      .set(authHeader(admin.token));
+
+    expect(res.status).toBe(200);
+    for (const user of res.body.data) {
+      expect(user.role).toBe("ADMIN");
+    }
+  });
+
+  it("returns an empty page past the end of the result set", async () => {
+    const res = await request(app)
+      .get("/api/v1/users?page=999&limit=10")
+      .set(authHeader(admin.token));
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(0);
+  });
+
+  it("rejects a limit above the 100 cap", async () => {
+    const res = await request(app)
+      .get("/api/v1/users?page=1&limit=500")
+      .set(authHeader(admin.token));
+
+    expect(res.status).toBe(400);
+  });
+
+  // sortBy is an enum so a caller can't order by an arbitrary column.
+  it("rejects an unsupported sortBy column", async () => {
+    const res = await request(app)
+      .get("/api/v1/users?page=1&limit=10&sortBy=passwordHash")
+      .set(authHeader(admin.token));
+
+    expect(res.status).toBe(400);
+  });
 });
 
 describe("PUT /api/v1/users/:id", () => {

@@ -9,14 +9,19 @@ import { authenticate } from "../middleware/authenticate";
 import { authorize } from "../middleware/authorize";
 import { validate } from "../middleware/validate";
 import { asyncHandler } from "../utils/asyncHandler";
-import { createUserSchema, updateUserSchema, userIdParamSchema } from "../validators/user.schema";
+import {
+  createUserSchema,
+  listUsersQuerySchema,
+  updateUserSchema,
+  userIdParamSchema,
+} from "../validators/user.schema";
 
 const router = Router();
 
 // Every user management endpoint is admin-only.
 router.use(authenticate, authorize("ADMIN"));
 
-router.get("/", asyncHandler(listUsersHandler));
+router.get("/", validate(listUsersQuerySchema), asyncHandler(listUsersHandler));
 router.post("/", validate(createUserSchema), asyncHandler(createUserHandler));
 router.put("/:id", validate(updateUserSchema), asyncHandler(updateUserHandler));
 router.delete("/:id", validate(userIdParamSchema), asyncHandler(deleteUserHandler));

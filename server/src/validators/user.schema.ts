@@ -28,5 +28,21 @@ export const updateUserSchema = z.object({
     }),
 });
 
+// Listing users supports the same pagination/search/sort shape as leads, but
+// `page`/`limit` are intentionally left optional with NO default: the lead
+// assignment dropdowns call this endpoint expecting every user back. Only when
+// a caller explicitly asks for a page do we paginate.
+export const listUsersQuerySchema = z.object({
+  query: z.object({
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+    search: z.string().trim().optional(),
+    role: z.enum(["ADMIN", "MEMBER"]).optional(),
+    sortBy: z.enum(["createdAt", "name", "email", "role"]).default("createdAt"),
+    order: z.enum(["asc", "desc"]).default("desc"),
+  }),
+});
+
 export type CreateUserInput = z.infer<typeof createUserSchema>["body"];
 export type UpdateUserInput = z.infer<typeof updateUserSchema>["body"];
+export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>["query"];

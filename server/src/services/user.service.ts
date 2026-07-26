@@ -7,20 +7,60 @@
 import { AppError } from "../utils/AppError";
 import { hashPassword } from "../utils/password";
 import { sanitizeUser, SafeUser } from "../utils/sanitizeUser";
+import { Prisma } from "@prisma/client";
 import {
   countUserReferences,
   createUser as createUserRecord,
   deleteUser as deleteUserRecord,
-  findAllUsers,
   findUserByEmail,
   findUserById,
+  findUsers,
   updateUser as updateUserRecord,
 } from "../repositories/user.repository";
-import { CreateUserInput, UpdateUserInput } from "../validators/user.schema";
+import { CreateUserInput, ListUsersQuery, UpdateUserInput } from "../validators/user.schema";
 
-export async function listUsers(): Promise<SafeUser[]> {
-  const users = await findAllUsers();
-  return users.map(sanitizeUser);
+function buildUserWhere(filters: { search?: string; role?: string }): Prisma.UserWhereInput {
+  const where: Prisma.UserWhereInput = {};
+
+  if (filters.role) {
+    where.role = filters.role as Prisma.EnumRoleFilter["equals"];
+  }
+
+  if (filters.search) {
+    where.OR = [
+      { name: { contains: filters.search, mode: "insensitive" } },
+      { email: { contains: filters.search, mode: "insensitive" } },
+    ];
+  }
+
+  return where;
+}
+
+export async function listUsers(query: ListUsersQuery) {
+  const where = buildUserWhere(query);
+
+  const { users, total } = await findUsers({
+    where,
+    page: query.page,
+    limit: query.limit,
+    sortBy: query.sortBy,
+    order: query.order,
+  });
+
+  // Only report pagination meta when the caller actually paginated - an
+  // unpaginated call returns the full list and no meta, as before.
+  const limit = query.limit ?? total;
+  const meta =
+    query.page !== undefined && query.limit !== undefined
+      ? {
+          page: query.page,
+          limit: query.limit,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / limit)),
+        }
+      : undefined;
+
+  return { users: users.map(sanitizeUser), meta };
 }
 
 export async function createUser(input: CreateUserInput): Promise<SafeUser> {

@@ -1,10 +1,12 @@
 import { Request, Response } from "express";
 import { AppError } from "../utils/AppError";
 import * as userService from "../services/user.service";
+import { ListUsersQuery } from "../validators/user.schema";
 
-export async function listUsersHandler(_req: Request, res: Response) {
-  const users = await userService.listUsers();
-  res.status(200).json({ success: true, data: users });
+export async function listUsersHandler(req: Request, res: Response) {
+  const query = req.validatedQuery as unknown as ListUsersQuery;
+  const { users, meta } = await userService.listUsers(query);
+  res.status(200).json({ success: true, data: users, ...(meta ? { meta } : {}) });
 }
 
 export async function createUserHandler(req: Request, res: Response) {
