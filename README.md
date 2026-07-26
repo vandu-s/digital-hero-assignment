@@ -4,6 +4,8 @@ A production-quality Lead Management CRM built as a full-stack monorepo: React +
 
 ## 🚀 Live Demo
 
+> ⏳ **Please note: the first load can take 30–60 seconds.** These services run on Render's free plan, which puts them to sleep after inactivity — the first request has to wake them up. If the page or login seems to hang, give it a moment and it will come up.
+
 | | URL |
 |---|---|
 | **Application (start here)** | **https://lead-crm-client.onrender.com** |
@@ -21,9 +23,7 @@ Log in as **both** roles to see permissions differ: the admin sees every lead pl
 
 You can also submit the **public capture form** on the landing page without logging in — it creates an unassigned `NEW` lead that then appears in the admin's list.
 
-> **Notes on the free tier.** These run on Render's free plan, which sleeps after inactivity — the **first request can take 30–60 seconds** to wake the service. If the app looks like it's hanging on login, give it a moment and retry.
->
-> Opening the API base URL directly in a browser returns `{"success":false,"error":{"message":"Route not found: GET /"}}`. **That is correct behaviour, not an error** — it's a JSON API with no page at `/`. Use the health check link above to confirm the API is up.
+> **On opening the API directly.** The API base URL returns `{"success":false,"error":{"message":"Route not found: GET /"}}` in a browser. **That is correct behaviour, not an error** — it's a JSON API with no page at its root, and `/api/v1` is a path prefix rather than an endpoint. Use the health check link above to confirm the API is up.
 
 ## Table of Contents
 
