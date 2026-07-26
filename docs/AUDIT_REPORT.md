@@ -49,7 +49,7 @@ Strict Route → Controller → Service → Repository layering. Routes are thin
 Proper relationships (two named User→Lead relations correctly disambiguated), indexes on hot filter columns (`status`, `assignedToId`, `leadId`), unique constraint on `User.email`, cascade delete of notes/activities with a lead, snake_case table mapping, UUID PKs, sensible normalization with the deliberate audit-log denormalization documented. *Minor deferred items (Low):* `Activity.type` could be an enum; `Lead` user FKs lack an explicit `onDelete` (no user-deletion feature exists yet) — both scheduled in the Migration Plan, neither a defect today.
 
 ### 12. Security — ✅ PASS *(rate limiting + hardening added in this pass)*
-No secrets in tracked source (`.env` gitignored), no hardcoded passwords in app code, no SQL injection (Prisma parameterized, no raw queries), bcrypt hashing, `sanitizeUser` prevents hash leakage, Zod validation, Helmet, origin-locked CORS, and error hygiene (internals only in `development`). *Was the weakest area* — no rate limiting. *Now PASS:* `express-rate-limit` (20/15min auth+public, 300/15min API), 100 KB body cap, `trust proxy` for correct IPs. *Deploy-time note:* rotate the local dev `JWT_SECRET`; production already uses a generated secret via `render.yaml`. XSS: stored free-text isn't HTML-sanitized server-side, but React escapes on render — acceptable; flagged for a future sanitization pass if rich text is ever introduced.
+No secrets in tracked source (`.env` gitignored), no hardcoded passwords in app code, no SQL injection (Prisma parameterized, no raw queries), bcrypt hashing, `sanitizeUser` prevents hash leakage, Zod validation, Helmet, origin-locked CORS, and error hygiene (internals only in `development`). *Was the weakest area* — no rate limiting. *Now PASS:* `express-rate-limit` (20/15min auth+public, 300/15min API), 100 KB body cap, `trust proxy` for correct IPs. *Secret hygiene verified:* no `.env` file appears in any commit (only `.env.example` templates), and production uses a Render-generated secret via `render.yaml`, separate from the local dev value. XSS: stored free-text isn't HTML-sanitized server-side, but React escapes on render — acceptable; flagged for a future sanitization pass if rich text is ever introduced.
 
 ### 13. Testing — ✅ PASS *(backend + frontend, both passing)*
 **63 backend** integration tests (Jest + Supertest, real DB): authentication (incl. refresh/logout), authorization/role-gating, lead CRUD, assignment, status lifecycle, notes, pagination, status/assignee/date filtering, sorting, search, query validation, user create/delete guards, and error handling — covering every documented status code (200/201/204/400/401/403/404/409). **22 frontend** tests (Vitest + React Testing Library): validation logic, component rendering, the login flow through Redux, public-form validation, and the `ProtectedRoute`/`RoleRoute` guards. *The frontend suite closes the one genuine gap from the first pass* (the assignment mandates Vitest + RTL). Remaining nice-to-have (Low): per-test DB isolation — in the Migration Plan.
@@ -69,10 +69,10 @@ The exact text **"Built for Digital Heroes Training Task"** links to **https://d
 
 | Deliverable | Status | Location |
 |---|---|---|
-| Assessment document (problems, priority, business impact, risk, tech debt, why) | ✅ PASS | [`docs/ASSESSMENT.md`](ASSESSMENT.md) |
-| Migration plan (Week 1 / Month 1 / Quarter 1, incremental, no big-bang) | ✅ PASS | [`docs/MIGRATION_PLAN.md`](MIGRATION_PLAN.md) |
-| Refactor example (bad → good, with rationale across readability/maintainability/performance/security) | ✅ PASS | [`docs/REFACTOR_EXAMPLE.md`](REFACTOR_EXAMPLE.md) |
-| Engineering standards (all 15 areas) + resistant-team adoption strategy | ✅ PASS | [`docs/ENGINEERING_STANDARDS.md`](ENGINEERING_STANDARDS.md) |
+| Assessment document (problems, priority, business impact, risk, tech debt, why) | ✅ PASS | [`TASK_B_ASSESSMENT.md`](../TASK_B_ASSESSMENT.md) |
+| Migration plan (Week 1 / Month 1 / Quarter 1, incremental, no big-bang) | ✅ PASS | [`TASK_B_MIGRATION_PLAN.md`](../TASK_B_MIGRATION_PLAN.md) |
+| Refactor example (bad → good, with rationale across readability/maintainability/performance/security) | ✅ PASS | [`TASK_B_REFACTOR.md`](../TASK_B_REFACTOR.md) |
+| Engineering standards (all areas) + resistant-team adoption strategy | ✅ PASS | [`ENGINEERING_STANDARDS.md`](../ENGINEERING_STANDARDS.md) |
 
 ---
 
@@ -90,7 +90,7 @@ Removed dead `ActivityListItem`; consolidated duplicated `DetailRow`/`SettingsRo
 ## Remaining issues by priority
 
 ### Critical
-- **None outstanding.** (Rate limiting — fixed. Committed dev `JWT_SECRET` — deploy-time rotation action; production already uses a generated secret.)
+- **None outstanding.** (Rate limiting — fixed. Secret hygiene — verified clean: no `.env` has ever been committed, and production uses a Render-generated secret distinct from the local dev one.)
 
 ### High
 - **None outstanding.** (Error states, remember-me, public-form validation, footer, error boundary — all fixed this pass.)

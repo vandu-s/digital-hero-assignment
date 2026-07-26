@@ -2,8 +2,32 @@
 
 A production-quality Lead Management CRM built as a full-stack monorepo: React + TypeScript on the frontend, Express + TypeScript + Prisma + PostgreSQL on the backend, JWT authentication with role-based access control.
 
+## 🚀 Live Demo
+
+| | URL |
+|---|---|
+| **Application (start here)** | **https://lead-crm-client.onrender.com** |
+| API base | https://lead-crm-api-3sg8.onrender.com/api/v1 |
+| API health check | https://lead-crm-api-3sg8.onrender.com/api/v1/health |
+
+### Login credentials
+
+| Role | Email | Password |
+|---|---|---|
+| **Admin** | `admin@crm.test` | `Password123!` |
+| **Member** | `jane@crm.test` | `Password123!` |
+
+Log in as **both** roles to see permissions differ: the admin sees every lead plus the **Users** page and can delete and reassign leads; the member sees only leads assigned to them, and has no Users page.
+
+You can also submit the **public capture form** on the landing page without logging in — it creates an unassigned `NEW` lead that then appears in the admin's list.
+
+> **Notes on the free tier.** These run on Render's free plan, which sleeps after inactivity — the **first request can take 30–60 seconds** to wake the service. If the app looks like it's hanging on login, give it a moment and retry.
+>
+> Opening the API base URL directly in a browser returns `{"success":false,"error":{"message":"Route not found: GET /"}}`. **That is correct behaviour, not an error** — it's a JSON API with no page at `/`. Use the health check link above to confirm the API is up.
+
 ## Table of Contents
 
+- [Live Demo](#-live-demo)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Folder Structure](#folder-structure)
@@ -207,7 +231,7 @@ Open `http://localhost:5173` and log in with the seeded admin account above.
 **Backend** — Jest + Supertest integration tests against your local PostgreSQL database (real Prisma queries end-to-end, no mocking):
 
 ```bash
-npm run test:server        # 63 tests: health, auth (incl. refresh/logout),
+npm run test:server        # 73 tests: health, auth (incl. refresh/logout),
                            # leads, notes, users (CRUD + guards), and list
                            # pagination/filter/sort/date-filter/validation
 ```
@@ -215,7 +239,7 @@ npm run test:server        # 63 tests: health, auth (incl. refresh/logout),
 **Frontend** — Vitest + React Testing Library (jsdom):
 
 ```bash
-npm run test --workspace=client            # 22 tests
+npm run test --workspace=client            # 23 tests
 npm run test:coverage --workspace=client   # with a v8 coverage report
 ```
 
@@ -325,22 +349,25 @@ npm run prisma:seed --workspace=server
 
 ## Engineering Documentation (Task B)
 
-Deeper engineering docs live in [`docs/`](docs/):
+The four Task B deliverables are at the repository root:
 
-- [`ASSESSMENT.md`](docs/ASSESSMENT.md) — inherited-code assessment: problems, priority, business impact, risk, technical debt.
-- [`MIGRATION_PLAN.md`](docs/MIGRATION_PLAN.md) — incremental improvement plan (Week 1 / Month 1 / Quarter 1), no big-bang rewrite.
-- [`REFACTOR_EXAMPLE.md`](docs/REFACTOR_EXAMPLE.md) — a fat route handler refactored into the layered architecture, with rationale.
-- [`ENGINEERING_STANDARDS.md`](docs/ENGINEERING_STANDARDS.md) — team standards (git, testing, CI/CD, security, logging…) and an adoption strategy.
+| Deliverable | Document |
+|---|---|
+| (a) Assessment | [`TASK_B_ASSESSMENT.md`](TASK_B_ASSESSMENT.md) — every issue with Problem / Location / Why it's a problem / Risk / Recommendation / Effort, plus a prioritisation table |
+| (b) Phased migration plan | [`TASK_B_MIGRATION_PLAN.md`](TASK_B_MIGRATION_PLAN.md) — Week 1 / Month 1 / Quarter 1, no big-bang rewrite |
+| (c) Before/after refactor | [`TASK_B_REFACTOR.md`](TASK_B_REFACTOR.md) — a real oversized component refactored, with commentary, no behaviour change |
+| (d) Standards proposal | [`ENGINEERING_STANDARDS.md`](ENGINEERING_STANDARDS.md) — standards across 17 areas + how to drive adoption on a resistant team |
+
+Supporting documents:
+
+- [`TASK_B_SCORE.md`](TASK_B_SCORE.md) — strict self-assessment against the Task B rubric.
 - [`AUDIT_REPORT.md`](docs/AUDIT_REPORT.md) — requirement-by-requirement PASS / PARTIAL / FAIL audit.
 - [`Project-Audit.pdf`](docs/Project-Audit.pdf) — the full formatted project-audit report (executive summary, architecture, DB diagram, API/security/test summaries, requirement checklist, QA walkthrough, overall score).
 
 ## Screenshots
 
-> _Add screenshots of the Landing page, Login, Dashboard, Leads table, and Lead Details here before submitting._
-
-| Landing | Dashboard | Leads | Lead Details |
-|---|---|---|---|
-| _screenshot_ | _screenshot_ | _screenshot_ | _screenshot_ |
+The app is deployed and browsable — see [Live Demo](#-live-demo) above for the URL and
+credentials for both roles, rather than static images that can drift from the real UI.
 
 ---
 
