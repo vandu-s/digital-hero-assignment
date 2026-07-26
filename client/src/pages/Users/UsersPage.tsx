@@ -203,8 +203,16 @@ export function UsersPage() {
         </Button>
       </Stack>
 
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+      {/* Both fields carry a label so the theme's stacked label-above-input
+          layout gives them the same height; flex-end keeps the inputs on a
+          shared baseline the way the leads filter bar does. */}
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={2}
+        alignItems={{ xs: "stretch", sm: "flex-end" }}
+      >
         <TextField
+          label="Search"
           placeholder="Search by name or email"
           value={search}
           onChange={(e) => {
@@ -212,7 +220,8 @@ export function UsersPage() {
             setPage(0);
           }}
           size="small"
-          sx={{ maxWidth: { sm: 320 }, width: "100%" }}
+          sx={{ width: { xs: "100%", sm: 320 } }}
+          InputLabelProps={{ shrink: true }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -230,7 +239,8 @@ export function UsersPage() {
             setPage(0);
           }}
           size="small"
-          sx={{ minWidth: 160 }}
+          sx={{ minWidth: 180 }}
+          InputLabelProps={{ shrink: true }}
         >
           <MenuItem value="">All roles</MenuItem>
           <MenuItem value="ADMIN">Admin</MenuItem>
